@@ -1,5 +1,5 @@
 #google text to speech
-from gtts import gTTS#google text to speech
+from gtts import gTTS
 import speech_recognition as sr
 import playsound
 from time import ctime
@@ -9,14 +9,39 @@ import uuid#universal unique id
 import smtplib
 import webbrowser
 
-#to make sure it listens
+
 def listen():
     r=sr.Recognizer()
-    with sr.Microphone() as source:
-        print("start talking")
-        audio=r.listen(source,phrase_time_limit=10)
+    try:
+        with sr.Microphone() as source:
+            print("start talking")
+            audio=r.listen(source,phrase_time_limit=10)
+    except OSError as e:
+        print("No default input device available:", e)
+        mics = sr.Microphone.list_microphone_names()
+        if not mics:
+            print("No microphone devices found. Attach or enable a microphone and try again.")
+            return ""
+        print("Available devices:")
+        for i, name in enumerate(mics):
+            print(f"{i}: {name}")
+        idx = input("Enter device index to use (or press Enter to cancel): ").strip()
+        if idx == "":
+            return ""
+        try:
+            idx = int(idx)
+        except ValueError:
+            print("Invalid index.")
+            return ""
+        try:
+            with sr.Microphone(device_index=idx) as source:
+                print("start talking")
+                audio=r.listen(source,phrase_time_limit=10)
+        except Exception as e2:
+            print("Failed to open chosen device:", e2)
+            return ""
     data=""
-#Exception Handling
+    
     try:
         data=r.recognize_google(audio,language='en-US')
         print("you said:"+data)
@@ -26,10 +51,10 @@ def listen():
         print("Request Failed")
     return data
 listen()
-#To respond back with audio
+
 def respond(String):
     print(String)
-    tts=gTTS(text=String,lang='en-US')
+    tts=gTTS(text=String,lang='en')
     tts.save("speech.mp3")
     filename="Speech%s.mp3"%str(uuid.uuid4())
     tts.save(filename)
@@ -58,7 +83,7 @@ def  Virtual_assistant(data):
     if "locate" in data:
         webbrowser.open('https://www.google.com/maps/search/'+data.replace("locate",""))
         result="Located"
-        respond("Located { }".format(data.replace("locate","")))
+        respond("Located {}".format(data.replace("locate","")))
         
     if "email" in data:
         listening =True
@@ -71,19 +96,17 @@ def  Virtual_assistant(data):
         subject=listen()
         respond("What should i tell that person?")
         message=listen()
-        content='subject :{ }\n\n{ }'.format (subject,message)
+        content='subject :{}\n\n{}'.format(subject,message)
 
-        #init gmail SMTP
         mail=smtplib.SMTP('smtp.gmail.com',587)
-        #identify the server
+ 
         mail.ehlo()
-        mail.starttls()#encryption format
-        #login
-        mail.login('antlasaieswar123@gmail.com','luwf ozdl mhcb jntf')
-        #enter the mailid and app password make
-        #sure you enable less secure app access
+        mail.starttls()
+
+        mail.login('antlasaieswar123@gmail.com','luwf ozdl mhcb jntf')
+
         mail.sendmail('antlasaieswar123@gmail.com',toaddr,content)
-        #enter your gmail username
+
         mail.close()
         respond('Email Sent')
     if "stop" in data:
@@ -100,9 +123,3 @@ listening =True
 while listening ==True:
     data =listen()
     listening =Virtual_assistant(data)
-    
-
-        
-        
-    
-        
